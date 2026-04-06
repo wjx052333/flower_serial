@@ -315,6 +315,8 @@ static void sig_handler(int) { g_running = false; }
 /* ------------------------------------------------------------------ */
 
 int main() {
+    rtc::InitLogger(rtc::LogLevel::Warning);
+
     signal(SIGINT,  sig_handler);
     signal(SIGTERM, sig_handler);
 

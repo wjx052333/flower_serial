@@ -169,7 +169,7 @@ ws://<host>:8765
 
 ```json
 { "ok": false, "error": "device unavailable" }
-{ "ok": false, "error": "duration out of range (1-86400 seconds)" }
+{ "ok": false, "error": "duration out of range (1-600 seconds)" }
 ```
 
 ---

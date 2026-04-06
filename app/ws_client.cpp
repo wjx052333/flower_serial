@@ -104,7 +104,12 @@ int main(int argc, char *argv[]) {
         }
 
         std::printf(">> %s\n", payload);
-        ws.send(std::string(payload));
+        try {
+            ws.send(std::string(payload));
+        } catch (const std::exception &e) {
+            std::fprintf(stderr, "send failed: %s\n", e.what());
+            break;
+        }
         wait_reply();
     }
 

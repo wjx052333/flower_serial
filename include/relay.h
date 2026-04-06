@@ -19,3 +19,6 @@ result_t relay_close(int fd);
 
 /* Query relay state; returns RELAY_ON, RELAY_OFF, or RELAY_ERR. */
 relay_state_t relay_query(int fd);
+
+/* Reverse relay state; returns RELAY_ON, RELAY_OFF, or RELAY_ERR. */
+result_t relay_reverse(int fd);
