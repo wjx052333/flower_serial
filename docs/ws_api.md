@@ -43,15 +43,17 @@ ws://<host>:8765
 { "ok": false, "error": "<错误描述>" }
 ```
 
-| `error` 值              | 含义                           |
-|------------------------|-------------------------------|
-| `device unavailable`   | 对应设备当前未插入或未被识别      |
-| `relay open failed`    | 继电器已连接但执行命令失败        |
-| `relay close failed`   | 继电器已连接但执行命令失败        |
-| `relay query failed`   | 继电器已连接但查询失败            |
-| `soil read failed`     | 传感器已连接但读取失败            |
-| `missing 'cmd' field`  | 请求 JSON 中缺少 `cmd` 字段      |
-| `unknown command`      | `cmd` 值不在已知命令列表中        |
+| `error` 值                              | 含义                                      |
+|----------------------------------------|------------------------------------------|
+| `device unavailable`                   | 对应设备当前未插入或未被识别               |
+| `relay open failed`                    | 继电器已连接但执行命令失败                 |
+| `relay close failed`                   | 继电器已连接但执行命令失败                 |
+| `relay query failed`                   | 继电器已连接但查询失败                     |
+| `relay already open, has been closed`  | 定时开启时继电器已处于打开状态，已强制关闭  |
+| `duration out of range (1-600 seconds)` | `duration` 参数不在有效范围内           |
+| `soil read failed`                     | 传感器已连接但读取失败                     |
+| `missing 'cmd' field`                  | 请求 JSON 中缺少 `cmd` 字段               |
+| `unknown command`                      | `cmd` 值不在已知命令列表中                 |
 
 ---
 
@@ -129,6 +131,49 @@ ws://<host>:8765
 
 ---
 
+### relay_open_timed — 定时打开继电器
+
+打开继电器，经过指定秒数后自动关闭。
+
+**若调用时继电器已处于打开状态**，服务器会先强制关闭继电器，然后返回错误，**不会**启动新的定时器。
+
+调用 `relay_close` 或再次调用 `relay_open` 会取消正在运行的定时器。
+
+**请求**
+
+```json
+{ "cmd": "relay_open_timed", "duration": 180 }
+```
+
+| 字段       | 类型 | 必填 | 说明                      |
+|-----------|-----|------|--------------------------|
+| `duration` | int | 是   | 持续时间，单位秒，范围 1–600 |
+
+**响应（成功）**
+
+```json
+{ "ok": true, "duration": 180 }
+```
+
+响应立即返回，不等待定时器到期。`duration` 回显实际使用的秒数。
+
+**响应（继电器已开启）**
+
+```json
+{ "ok": false, "error": "relay already open, has been closed" }
+```
+
+继电器在返回此错误前已被关闭。
+
+**响应（其他失败）**
+
+```json
+{ "ok": false, "error": "device unavailable" }
+{ "ok": false, "error": "duration out of range (1-86400 seconds)" }
+```
+
+---
+
 ### soil_query — 读取土壤传感器
 
 **请求**
@@ -198,12 +243,22 @@ async def main():
         # 打开继电器
         await ws.send(json.dumps({"cmd": "relay_open"}))
         print(await ws.recv())
-        # {"ok": true}
+        # {"ok":true}
 
         # 查询继电器状态
         await ws.send(json.dumps({"cmd": "relay_query"}))
         print(await ws.recv())
-        # {"ok": true, "state": "open"}
+        # {"ok":true,"state":"open"}
+
+        # 定时打开继电器 3 分钟（180 秒后自动关闭）
+        await ws.send(json.dumps({"cmd": "relay_open_timed", "duration": 180}))
+        resp = json.loads(await ws.recv())
+        if resp["ok"]:
+            print(f"继电器已打开，将在 {resp['duration']} 秒后自动关闭")
+        else:
+            print(f"错误: {resp['error']}")
+            # 若 error == "relay already open, has been closed"
+            # 说明继电器之前已打开，服务器已将其关闭
 
         # 读取土壤传感器
         await ws.send(json.dumps({"cmd": "soil_query"}))

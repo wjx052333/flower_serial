@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
     ws.onOpen([&]() {
         std::printf("connected.\n");
-        std::printf("commands:  o=relay_open  c=relay_close  r=relay_query  s=soil_query  q=quit\n");
+        std::printf("commands:  o=relay_open  c=relay_close  r=relay_query  t=relay_open_timed(180s)  s=soil_query  q=quit\n");
         g_open = true;
         g_cv.notify_all();
     });
@@ -82,10 +82,11 @@ int main(int argc, char *argv[]) {
     if (!g_open) return 1;
 
     static const struct { char key; const char *cmd; } table[] = {
-        { 'o', R"({"cmd":"relay_open"})"  },
-        { 'c', R"({"cmd":"relay_close"})" },
-        { 'r', R"({"cmd":"relay_query"})" },
-        { 's', R"({"cmd":"soil_query"})"  },
+        { 'o', R"({"cmd":"relay_open"})"                   },
+        { 'c', R"({"cmd":"relay_close"})"                  },
+        { 'r', R"({"cmd":"relay_query"})"                  },
+        { 't', R"({"cmd":"relay_open_timed","duration":180})" },
+        { 's', R"({"cmd":"soil_query"})"                   },
     };
 
     char line[16];
